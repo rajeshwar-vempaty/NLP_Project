@@ -1,5 +1,6 @@
 # NLP_Project
-Project Title: Interactive PDF Knowledge Extraction System
+
+# Project Title: Interactive PDF Knowledge Extraction System
 
 Installation and Execution Guide:
 
