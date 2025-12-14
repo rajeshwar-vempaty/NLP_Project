@@ -76,7 +76,6 @@ def clean_text(text: str) -> str:
     Returns:
         Cleaned and normalized text.
     """
-    text = text.lower()
     patterns_to_remove = [
         r'\b[\w.-]+?@\w+?\.\w+?\b',      # emails
         r'\[[^\]]*\]',                     # text in square brackets
@@ -90,7 +89,8 @@ def clean_text(text: str) -> str:
         r'<[^>]+>',                        # HTML tags
     ]
     for pattern in patterns_to_remove:
-        text = re.sub(pattern, '', text, flags=re.MULTILINE)
+        text = re.sub(pattern, '', text, flags=re.MULTILINE | re.IGNORECASE)
+    text = text.lower()
     return re.sub(r'\s+', ' ', text).strip()
 
 
