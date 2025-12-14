@@ -14,10 +14,10 @@ import pdfplumber
 import streamlit as st
 from dotenv import load_dotenv
 from langchain.chains import ConversationalRetrievalChain
-from langchain.embeddings import HuggingFaceInstructEmbeddings, OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 from langchain.memory import ConversationBufferMemory
-from langchain.vectorstores import FAISS
-from langchain_community.chat_models import ChatOpenAI
+from langchain_community.vectorstores import FAISS
 
 from htmlTemplates import bot_template, css, user_template
 
