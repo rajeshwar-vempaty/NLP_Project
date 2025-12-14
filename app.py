@@ -13,15 +13,36 @@ from typing import List, Optional
 import pdfplumber
 import streamlit as st
 from dotenv import load_dotenv
-from langchain.chains import ConversationalRetrievalChain
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_community.embeddings import HuggingFaceInstructEmbeddings
-from langchain_community.vectorstores import FAISS
+
+# Handle different langchain versions with try/except imports
+try:
+    from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+except ImportError:
+    from langchain.embeddings import OpenAIEmbeddings
+    from langchain.chat_models import ChatOpenAI
+
+try:
+    from langchain_community.embeddings import HuggingFaceInstructEmbeddings
+except ImportError:
+    from langchain.embeddings import HuggingFaceInstructEmbeddings
+
+try:
+    from langchain_community.vectorstores import FAISS
+except ImportError:
+    from langchain.vectorstores import FAISS
+
+try:
+    from langchain.chains import ConversationalRetrievalChain
+except ImportError:
+    from langchain_community.chains import ConversationalRetrievalChain
 
 try:
     from langchain.memory import ConversationBufferMemory
 except ImportError:
-    from langchain_community.memory import ConversationBufferMemory
+    try:
+        from langchain_community.memory import ConversationBufferMemory
+    except ImportError:
+        from langchain.memory.buffer import ConversationBufferMemory
 
 from htmlTemplates import bot_template, css, user_template
 

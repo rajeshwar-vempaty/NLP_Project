@@ -7,15 +7,35 @@ import os
 from typing import Generator, List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass
 
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_community.embeddings import HuggingFaceInstructEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain.chains import ConversationalRetrievalChain
+# Handle different langchain versions with try/except imports
+try:
+    from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+except ImportError:
+    from langchain.embeddings import OpenAIEmbeddings
+    from langchain.chat_models import ChatOpenAI
+
+try:
+    from langchain_community.embeddings import HuggingFaceInstructEmbeddings
+except ImportError:
+    from langchain.embeddings import HuggingFaceInstructEmbeddings
+
+try:
+    from langchain_community.vectorstores import FAISS
+except ImportError:
+    from langchain.vectorstores import FAISS
+
+try:
+    from langchain.chains import ConversationalRetrievalChain
+except ImportError:
+    from langchain_community.chains import ConversationalRetrievalChain
 
 try:
     from langchain.memory import ConversationBufferMemory
 except ImportError:
-    from langchain_community.memory import ConversationBufferMemory
+    try:
+        from langchain_community.memory import ConversationBufferMemory
+    except ImportError:
+        from langchain.memory.buffer import ConversationBufferMemory
 
 from ..config.settings import get_settings
 from ..models.schemas import TextChunk, ChatMessage, MessageRole
@@ -122,7 +142,7 @@ class LLMService:
         model_name: str = "gpt-3.5-turbo",
         temperature: float = 0.7,
         max_tokens: int = 1000
-    ) -> ConversationalRetrievalChain:
+    ):
         """
         Create conversational retrieval chain.
 
