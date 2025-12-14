@@ -7,11 +7,11 @@ import os
 from typing import Generator, List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass
 
-from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
-from langchain.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_community.embeddings import HuggingFaceInstructEmbeddings
+from langchain_community.vectorstores import FAISS
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-from langchain_community.chat_models import ChatOpenAI
 
 from ..config.settings import get_settings
 from ..models.schemas import TextChunk, ChatMessage, MessageRole
