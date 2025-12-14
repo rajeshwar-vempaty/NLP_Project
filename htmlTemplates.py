@@ -1,35 +1,51 @@
-css = '''
+"""
+HTML templates and CSS styles for the ResearchAI chat interface.
+
+Contains styling for chat messages and templates for bot/user message display.
+"""
+
+CSS = '''
 <style>
 .chat-message {
-    padding: 1rem; 
-    border-radius: 0.5rem; 
-    margin-bottom: 1rem; 
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
     display: flex;
     background-color: #f0f0f0;
     color: #333;
 }
+
 .chat-message.bot {
-    background-color: #e0e0e0;  /* Light grey for bot messages */
+    background-color: #475569;
+    color: #f8fafc;
 }
+
 .chat-message.user {
-    background-color: #d0d0d0;  /* Slightly darker grey for user messages */
+    background-color: #1e40af;
+    color: #f8fafc;
 }
+
 .chat-message .message {
-  padding: 0.5rem 1rem;
-  flex-grow: 1;
+    padding: 0.5rem 1rem;
+    flex-grow: 1;
+    line-height: 1.5;
 }
 </style>
 '''
 
-bot_template = '''
+BOT_TEMPLATE = '''
 <div class="chat-message bot">
     <div class="message">{{MSG}}</div>
 </div>
 '''
 
-user_template = '''
+USER_TEMPLATE = '''
 <div class="chat-message user">
     <div class="message">{{MSG}}</div>
 </div>
 '''
 
+# Backward compatibility aliases
+css = CSS
+bot_template = BOT_TEMPLATE
+user_template = USER_TEMPLATE
