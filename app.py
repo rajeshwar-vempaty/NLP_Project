@@ -16,8 +16,12 @@ from dotenv import load_dotenv
 from langchain.chains import ConversationalRetrievalChain
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.embeddings import HuggingFaceInstructEmbeddings
-from langchain.memory import ConversationBufferMemory
 from langchain_community.vectorstores import FAISS
+
+try:
+    from langchain.memory import ConversationBufferMemory
+except ImportError:
+    from langchain_community.memory import ConversationBufferMemory
 
 from htmlTemplates import bot_template, css, user_template
 

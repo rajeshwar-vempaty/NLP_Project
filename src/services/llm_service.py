@@ -10,8 +10,12 @@ from dataclasses import dataclass
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
+
+try:
+    from langchain.memory import ConversationBufferMemory
+except ImportError:
+    from langchain_community.memory import ConversationBufferMemory
 
 from ..config.settings import get_settings
 from ..models.schemas import TextChunk, ChatMessage, MessageRole
