@@ -24,16 +24,22 @@ try:
 except ImportError:
     from langchain.vectorstores import FAISS
 
+# ConversationalRetrievalChain import with multiple fallbacks
 try:
     from langchain.chains import ConversationalRetrievalChain
 except ImportError:
-    from langchain_community.chains import ConversationalRetrievalChain
+    try:
+        from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
+    except ImportError:
+        from langchain_community.chains.conversational_retrieval.base import ConversationalRetrievalChain
 
+# ConversationBufferMemory import with multiple fallbacks
 try:
     from langchain.memory import ConversationBufferMemory
 except ImportError:
     try:
-        from langchain_community.memory import ConversationBufferMemory
+        from langchain_community.chat_message_histories import ChatMessageHistory
+        from langchain.memory import ConversationBufferMemory
     except ImportError:
         from langchain.memory.buffer import ConversationBufferMemory
 
