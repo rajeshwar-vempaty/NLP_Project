@@ -1,26 +1,56 @@
 # Core dependencies
-streamlit>=1.18.1
+streamlit>=1.28.0
 python-dotenv>=1.0.0
 
 # LangChain framework
-langchain>=0.0.184
-langchain-community>=0.0.1
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-openai>=0.0.5
 
 # PDF processing
-pdfplumber>=0.9.0
+pdfplumber>=0.10.0
 PyPDF2>=3.0.1
 
+# Document formats
+python-docx>=1.0.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
 # OpenAI
-openai>=0.27.6
-tiktoken>=0.4.0
+openai>=1.6.0
+tiktoken>=0.5.0
+
+# Anthropic (optional)
+anthropic>=0.8.0
 
 # Vector store
 faiss-cpu>=1.7.4
 
 # Embeddings
-huggingface-hub>=0.14.1
-InstructorEmbedding>=1.0.1
+huggingface-hub>=0.20.0
 sentence-transformers>=2.2.2
+InstructorEmbedding>=1.0.1
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
 
 # Visualization
-altair>=4.0.0
+altair>=5.0.0
+plotly>=5.18.0
+
+# Export
+markdown>=3.5.0
+fpdf2>=2.7.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Type checking
+mypy>=1.7.0
+
+# Code quality
+black>=23.12.0
+flake8>=6.1.0
+isort>=5.13.0
