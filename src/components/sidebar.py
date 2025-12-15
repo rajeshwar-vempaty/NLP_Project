@@ -61,11 +61,14 @@ class SidebarComponent:
         formats = self.settings.supported_formats
         formats_str = ", ".join([f".{f}" for f in formats])
 
+        # Use a dynamic key based on a counter to allow clearing the uploader
+        uploader_key = f"file_uploader_{st.session_state.get('uploader_key_counter', 0)}"
+
         uploaded_files = st.file_uploader(
             f"Supported: {formats_str}",
             accept_multiple_files=True,
             type=formats,
-            key="file_uploader"
+            key=uploader_key
         )
 
         if uploaded_files:
@@ -81,20 +84,22 @@ class SidebarComponent:
             process_btn = st.button(
                 "🔄 Process",
                 disabled=not uploaded_files,
-                use_container_width=True
+                width="stretch"
             )
 
         with col2:
             clear_upload = st.button(
                 "🗑️ Clear",
-                use_container_width=True
+                width="stretch"
             )
 
         if process_btn and uploaded_files:
             on_process(uploaded_files)
 
         if clear_upload:
-            st.session_state.file_uploader = None
+            # Increment the counter to change the uploader key, effectively clearing it
+            current_counter = st.session_state.get('uploader_key_counter', 0)
+            st.session_state.uploader_key_counter = current_counter + 1
             st.rerun()
 
         return uploaded_files
@@ -182,7 +187,7 @@ class SidebarComponent:
         col1, col2 = st.columns(2)
 
         with col1:
-            if st.button("🗑️ Clear Chat", use_container_width=True):
+            if st.button("🗑️ Clear Chat", width="stretch"):
                 if on_clear:
                     on_clear()
                 st.session_state.chat_history = []
@@ -190,7 +195,7 @@ class SidebarComponent:
                 st.rerun()
 
         with col2:
-            if st.button("📤 Export", use_container_width=True):
+            if st.button("📤 Export", width="stretch"):
                 st.session_state.show_export = True
 
     def _render_footer(self) -> None:
