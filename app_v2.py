@@ -81,10 +81,9 @@ def process_documents(uploaded_files: List) -> None:
         st.warning("Please upload at least one document.")
         return
 
-    # Check for API key before processing
+    # Note: OpenAI API key is optional - will fall back to HuggingFace embeddings if not set
     if not settings.openai_api_key:
-        st.error("OpenAI API key is not configured. Please set OPENAI_API_KEY in your environment or .env file.")
-        return
+        st.info("OpenAI API key not set. Using HuggingFace embeddings (this may be slower on first run).")
 
     processor = DocumentProcessor()
     llm_service = LLMService()
@@ -448,12 +447,6 @@ def main() -> None:
         2. Click "Process" to analyze
         3. Explore the dashboard or start chatting!
         """)
-
-        # Show sample dashboard preview
-        st.image(
-            "https://via.placeholder.com/800x400?text=Upload+Documents+to+See+Dashboard",
-            use_container_width=True
-        )
 
 
 if __name__ == '__main__':
