@@ -58,7 +58,8 @@ def initialize_session_state() -> None:
         'show_dashboard': True,
         'suggested_question': None,
         'llm_service': None,
-        'analytics': None
+        'analytics': None,
+        'uploader_key_counter': 0
     }
 
     for key, value in defaults.items():
@@ -406,7 +407,7 @@ def main() -> None:
                 md_content,
                 "chat_export.md",
                 "text/markdown",
-                use_container_width=True
+                width="stretch"
             )
 
     # Main content
