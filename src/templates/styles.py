@@ -50,28 +50,84 @@ class Styles:
 
         return f'''
 <style>
+    /* CSS Custom Properties for dynamic theming */
+    :root {{
+        --text-primary: {colors['text_primary']};
+        --text-secondary: {colors['text_secondary']};
+        --bg-primary: {colors['bg_primary']};
+        --bg-secondary: {colors['bg_secondary']};
+        --bg-tertiary: {colors['bg_tertiary']};
+        --accent: {colors['accent']};
+        --accent-hover: {colors['accent_hover']};
+        --success: {colors['success']};
+        --warning: {colors['warning']};
+        --error: {colors['error']};
+        --border: {colors['border']};
+        --card-bg: {colors['card_bg']};
+        --card-shadow: {colors['card_shadow']};
+    }}
+
     /* Global Styles */
     .stApp {{
         background-color: {colors['bg_primary']};
         color: {colors['text_primary']};
     }}
 
-    /* Ensure all text elements have proper color */
-    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {{
+    /* Ensure all text elements have proper color - using high specificity selectors */
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
+    [data-testid="stAppViewContainer"] h1,
+    [data-testid="stAppViewContainer"] h2,
+    [data-testid="stAppViewContainer"] h3,
+    .stMainBlockContainer h1,
+    .stMainBlockContainer h2,
+    .stMainBlockContainer h3 {{
         color: {colors['text_primary']} !important;
     }}
 
-    .stApp p, .stApp li, .stApp span, .stApp div {{
-        color: {colors['text_primary']};
+    /* Main content text - high specificity for Streamlit elements */
+    .stApp p, .stApp li, .stApp span,
+    [data-testid="stAppViewContainer"] p,
+    [data-testid="stAppViewContainer"] li,
+    [data-testid="stAppViewContainer"] span,
+    .stMainBlockContainer p,
+    .stMainBlockContainer li,
+    .stMainBlockContainer span,
+    .element-container p,
+    .element-container li,
+    .element-container span {{
+        color: {colors['text_primary']} !important;
     }}
 
-    .stMarkdown, .stMarkdown p, .stMarkdown li {{
+    /* Streamlit markdown elements */
+    .stMarkdown, .stMarkdown p, .stMarkdown li,
+    [data-testid="stMarkdownContainer"],
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] li,
+    [data-testid="stMarkdownContainer"] span {{
+        color: {colors['text_primary']} !important;
+    }}
+
+    /* Ensure links are visible */
+    .stApp a, .stMarkdown a {{
+        color: {colors['accent']} !important;
+    }}
+
+    /* Fix tab content visibility */
+    .stTabs [data-baseweb="tab-panel"],
+    .stTabs [data-baseweb="tab-panel"] p,
+    .stTabs [data-baseweb="tab-panel"] li,
+    .stTabs [data-baseweb="tab-panel"] span {{
         color: {colors['text_primary']} !important;
     }}
 
     /* Secondary text styling */
     .stApp .secondary-text {{
         color: {colors['text_secondary']};
+    }}
+
+    /* Fix main block container */
+    .stMainBlockContainer, [data-testid="stMainBlockContainer"] {{
+        color: {colors['text_primary']} !important;
     }}
 
     /* Hide Streamlit branding */

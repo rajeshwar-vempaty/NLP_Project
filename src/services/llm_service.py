@@ -37,6 +37,24 @@ class LLMService:
         self.conversation_chain = None
         self.memory = None
 
+    def _get_openai_api_key(self) -> Optional[str]:
+        """Get OpenAI API key from settings or environment."""
+        return self.settings.openai_api_key or os.getenv("OPENAI_API_KEY")
+
+    def _create_chat_llm(self, model_name: Optional[str] = None, temperature: float = 0.7,
+                         max_tokens: int = 1000, streaming: bool = False) -> ChatOpenAI:
+        """Create a ChatOpenAI instance with proper API key handling."""
+        api_key = self._get_openai_api_key()
+        if not api_key:
+            raise ValueError("OpenAI API key is required. Please set OPENAI_API_KEY in your environment or .env file.")
+        return ChatOpenAI(
+            model_name=model_name or self.settings.default_model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            streaming=streaming,
+            openai_api_key=api_key
+        )
+
     def create_embeddings(self, provider: str = "openai", model_name: Optional[str] = None):
         """
         Create embedding model based on provider.
@@ -48,12 +66,22 @@ class LLMService:
         Returns:
             Embedding model instance.
         """
-        if provider == "huggingface" and model_name:
-            logger.info(f"Using HuggingFace embeddings: {model_name}")
-            return HuggingFaceInstructEmbeddings(model_name=model_name)
+        # Check if OpenAI API key is available
+        openai_api_key = self.settings.openai_api_key or os.getenv("OPENAI_API_KEY")
+
+        if provider == "huggingface" or not openai_api_key:
+            # Use HuggingFace embeddings as fallback
+            hf_model = model_name or "hkunlp/instructor-base"
+            logger.info(f"Using HuggingFace embeddings: {hf_model}")
+            try:
+                return HuggingFaceInstructEmbeddings(model_name=hf_model)
+            except Exception as e:
+                logger.warning(f"Failed to load instructor embeddings: {e}, trying sentence-transformers")
+                from langchain_community.embeddings import HuggingFaceEmbeddings
+                return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         else:
             logger.info("Using OpenAI embeddings")
-            return OpenAIEmbeddings()
+            return OpenAIEmbeddings(openai_api_key=openai_api_key)
 
     def create_vectorstore(
         self,
@@ -137,7 +165,7 @@ class LLMService:
         if not self.vectorstore:
             raise ValueError("Vector store not initialized. Call create_vectorstore first.")
 
-        llm = ChatOpenAI(
+        llm = self._create_chat_llm(
             model_name=model_name,
             temperature=temperature,
             max_tokens=max_tokens,
@@ -227,10 +255,7 @@ Question: {question}
 
 Answer:"""
 
-        llm = ChatOpenAI(
-            model_name=self.settings.default_model,
-            streaming=True
-        )
+        llm = self._create_chat_llm(streaming=True)
 
         for chunk in llm.stream(prompt):
             if hasattr(chunk, 'content'):
@@ -247,7 +272,7 @@ Answer:"""
         Returns:
             Summary text.
         """
-        llm = ChatOpenAI(model_name=self.settings.default_model, temperature=0.3)
+        llm = self._create_chat_llm(temperature=0.3)
 
         prompt = f"""Summarize the following research paper in {max_length} words or less.
 Focus on the main objective, methodology, key findings, and conclusions.
@@ -271,7 +296,7 @@ Summary:"""
         Returns:
             List of key findings.
         """
-        llm = ChatOpenAI(model_name=self.settings.default_model, temperature=0.3)
+        llm = self._create_chat_llm(temperature=0.3)
 
         prompt = f"""Extract the {num_findings} most important findings or contributions from this research paper.
 Return them as a numbered list, one finding per line.
@@ -307,7 +332,7 @@ Key Findings:"""
         Returns:
             List of suggested questions.
         """
-        llm = ChatOpenAI(model_name=self.settings.default_model, temperature=0.5)
+        llm = self._create_chat_llm(temperature=0.5)
 
         prompt = f"""Based on this research paper, generate {num_questions} insightful questions
 that a reader might want to ask about the content. Focus on methodology,
