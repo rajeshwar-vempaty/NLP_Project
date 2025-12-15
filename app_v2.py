@@ -81,6 +81,11 @@ def process_documents(uploaded_files: List) -> None:
         st.warning("Please upload at least one document.")
         return
 
+    # Check for API key before processing
+    if not settings.openai_api_key:
+        st.error("OpenAI API key is not configured. Please set OPENAI_API_KEY in your environment or .env file.")
+        return
+
     processor = DocumentProcessor()
     llm_service = LLMService()
     analytics = st.session_state.analytics
@@ -162,8 +167,14 @@ def process_documents(uploaded_files: List) -> None:
         st.success(f"Successfully processed {len(uploaded_files)} document(s)!")
 
     except Exception as e:
-        logger.error(f"Error processing documents: {e}")
-        st.error(f"Error processing documents: {str(e)}")
+        logger.error(f"Error processing documents: {e}", exc_info=True)
+        error_msg = str(e)
+        if "api_key" in error_msg.lower():
+            st.error("API Key Error: Please ensure your OpenAI API key is correctly configured in the .env file.")
+        elif "validation error" in error_msg.lower():
+            st.error(f"Configuration Error: {error_msg}. Please check your settings and try again.")
+        else:
+            st.error(f"Error processing documents: {error_msg}")
     finally:
         progress_bar.empty()
         status_text.empty()
