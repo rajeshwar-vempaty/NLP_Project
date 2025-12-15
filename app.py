@@ -13,12 +13,10 @@ from typing import List, Optional
 import pdfplumber
 import streamlit as st
 from dotenv import load_dotenv
-from langchain_classic.chains import ConversationalRetrievalChain
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.embeddings import HuggingFaceInstructEmbeddings
-from langchain_classic.memory import ConversationBufferMemory
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 from htmlTemplates import bot_template, css, user_template
 
@@ -171,7 +169,7 @@ def get_vectorstore(
     """
     try:
         if model_type == 'huggingface' and model_name:
-            embeddings = HuggingFaceInstructEmbeddings(model_name=model_name)
+            embeddings = HuggingFaceEmbeddings(model_name=model_name)
             logger.info("Using HuggingFace model: %s", model_name)
         else:
             embeddings = OpenAIEmbeddings()
@@ -187,26 +185,66 @@ def get_vectorstore(
         ) from e
 
 
-def get_conversation_chain(vectorstore: FAISS) -> ConversationalRetrievalChain:
+class SimpleConversation:
+    """Simple conversation handler using direct LLM calls."""
+
+    def __init__(self, vectorstore: FAISS, llm: ChatOpenAI):
+        self.vectorstore = vectorstore
+        self.llm = llm
+        self.chat_history = []
+
+    def __call__(self, inputs: dict) -> dict:
+        """Process a question and return response with chat history."""
+        question = inputs.get('question', '')
+
+        # Retrieve relevant documents
+        docs = self.vectorstore.similarity_search(question, k=4)
+        context = "\n\n".join([doc.page_content for doc in docs])
+
+        # Build messages
+        messages = [
+            SystemMessage(content="You are a helpful research assistant. Answer questions based on the provided context from research documents. If you cannot answer based on the context, say so clearly.")
+        ]
+
+        # Add chat history
+        for msg in self.chat_history[-10:]:
+            messages.append(msg)
+
+        # Add current question with context
+        user_prompt = f"""Context from documents:
+{context}
+
+Question: {question}
+
+Please provide a comprehensive answer based on the context above."""
+
+        messages.append(HumanMessage(content=user_prompt))
+
+        # Get response
+        response = self.llm.invoke(messages)
+        answer = response.content if hasattr(response, 'content') else str(response)
+
+        # Update chat history
+        self.chat_history.append(HumanMessage(content=question))
+        self.chat_history.append(AIMessage(content=answer))
+
+        return {
+            'chat_history': self.chat_history.copy()
+        }
+
+
+def get_conversation_chain(vectorstore: FAISS):
     """
-    Create a conversational retrieval chain for Q&A.
+    Create a conversation handler for Q&A.
 
     Args:
         vectorstore: FAISS vector store to use as retriever.
 
     Returns:
-        Configured conversational retrieval chain.
+        Configured conversation handler.
     """
     llm = ChatOpenAI()
-    memory = ConversationBufferMemory(
-        memory_key='chat_history',
-        return_messages=True
-    )
-    return ConversationalRetrievalChain.from_llm(
-        llm=llm,
-        retriever=vectorstore.as_retriever(),
-        memory=memory
-    )
+    return SimpleConversation(vectorstore, llm)
 
 
 def handle_userinput(user_question: str) -> None:

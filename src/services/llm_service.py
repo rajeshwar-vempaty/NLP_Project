@@ -1,20 +1,23 @@
 """
 LLM service for multi-provider language model support.
+
+Uses a modern approach compatible with langchain 0.2.0+ that avoids
+deprecated memory and chain APIs.
 """
 
 import logging
 import os
-from typing import Generator, List, Optional, Dict, Any, Tuple
+from typing import Generator, List, Optional, Tuple
 from dataclasses import dataclass
 
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_community.embeddings import HuggingFaceInstructEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from ..config.settings import get_settings
-from ..models.schemas import TextChunk, ChatMessage, MessageRole
+from ..models.schemas import TextChunk
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -34,8 +37,8 @@ class LLMService:
     def __init__(self):
         self.settings = get_settings()
         self.vectorstore = None
-        self.conversation_chain = None
-        self.memory = None
+        self.chat_history: List = []  # Manual chat history management
+        self._llm = None
 
     def _get_openai_api_key(self) -> Optional[str]:
         """Get OpenAI API key from settings or environment."""
@@ -71,14 +74,13 @@ class LLMService:
 
         if provider == "huggingface" or not openai_api_key:
             # Use HuggingFace embeddings as fallback
-            hf_model = model_name or "hkunlp/instructor-base"
+            hf_model = model_name or "all-MiniLM-L6-v2"
             logger.info(f"Using HuggingFace embeddings: {hf_model}")
             try:
-                return HuggingFaceInstructEmbeddings(model_name=hf_model)
+                return HuggingFaceEmbeddings(model_name=hf_model)
             except Exception as e:
-                logger.warning(f"Failed to load instructor embeddings: {e}, trying sentence-transformers")
-                from langchain_community.embeddings import HuggingFaceEmbeddings
-                return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+                logger.warning(f"Failed to load HuggingFace embeddings: {e}")
+                raise
         else:
             logger.info("Using OpenAI embeddings")
             return OpenAIEmbeddings(openai_api_key=openai_api_key)
@@ -150,47 +152,54 @@ class LLMService:
         model_name: str = "gpt-3.5-turbo",
         temperature: float = 0.7,
         max_tokens: int = 1000
-    ) -> ConversationalRetrievalChain:
+    ) -> None:
         """
-        Create conversational retrieval chain.
+        Initialize the LLM for conversation.
 
         Args:
             model_name: LLM model name.
             temperature: Response temperature.
             max_tokens: Maximum response tokens.
-
-        Returns:
-            Conversational retrieval chain.
         """
         if not self.vectorstore:
             raise ValueError("Vector store not initialized. Call create_vectorstore first.")
 
-        llm = self._create_chat_llm(
+        self._llm = self._create_chat_llm(
             model_name=model_name,
             temperature=temperature,
             max_tokens=max_tokens,
             streaming=True
         )
 
-        self.memory = ConversationBufferMemory(
-            memory_key='chat_history',
-            return_messages=True,
-            output_key='answer'
-        )
+        # Clear chat history when creating new chain
+        self.chat_history = []
 
-        self.conversation_chain = ConversationalRetrievalChain.from_llm(
-            llm=llm,
-            retriever=self.vectorstore.as_retriever(
-                search_type="similarity",
-                search_kwargs={"k": 4}
-            ),
-            memory=self.memory,
-            return_source_documents=True,
-            verbose=False
-        )
+        logger.info(f"Initialized conversation with model {model_name}")
 
-        logger.info(f"Created conversation chain with model {model_name}")
-        return self.conversation_chain
+    def _build_context_prompt(self, question: str, context: str) -> List:
+        """Build the prompt messages for the LLM."""
+        system_message = SystemMessage(content="""You are a helpful research assistant. Answer questions based on the provided context from research documents.
+If you cannot answer based on the context, say so clearly. Always be accurate and cite relevant parts of the context when possible.
+Keep responses concise but comprehensive.""")
+
+        # Build conversation history
+        messages = [system_message]
+
+        # Add chat history (last 6 exchanges max to avoid token limits)
+        for msg in self.chat_history[-12:]:
+            messages.append(msg)
+
+        # Add current question with context
+        user_prompt = f"""Context from documents:
+{context}
+
+Question: {question}
+
+Please provide a comprehensive answer based on the context above."""
+
+        messages.append(HumanMessage(content=user_prompt))
+
+        return messages
 
     def query(
         self,
@@ -198,7 +207,7 @@ class LLMService:
         include_sources: bool = True
     ) -> Tuple[str, List[SourceDocument]]:
         """
-        Query the conversation chain.
+        Query the documents with a question.
 
         Args:
             question: User question.
@@ -207,20 +216,31 @@ class LLMService:
         Returns:
             Tuple of (answer, source_documents).
         """
-        if not self.conversation_chain:
-            raise ValueError("Conversation chain not initialized.")
+        if not self._llm or not self.vectorstore:
+            raise ValueError("Conversation not initialized. Call create_conversation_chain first.")
 
-        result = self.conversation_chain({"question": question})
+        # Retrieve relevant documents
+        docs = self.vectorstore.similarity_search(question, k=4)
+        context = "\n\n---\n\n".join([doc.page_content for doc in docs])
 
-        answer = result.get('answer', '')
+        # Build messages and get response
+        messages = self._build_context_prompt(question, context)
+        response = self._llm.invoke(messages)
+
+        answer = response.content if hasattr(response, 'content') else str(response)
+
+        # Update chat history
+        self.chat_history.append(HumanMessage(content=question))
+        self.chat_history.append(AIMessage(content=answer))
+
+        # Build sources
         sources = []
-
-        if include_sources and 'source_documents' in result:
-            for doc in result['source_documents']:
+        if include_sources:
+            for doc in docs:
                 sources.append(SourceDocument(
                     content=doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content,
                     section=doc.metadata.get('section'),
-                    relevance_score=0.0  # FAISS doesn't return scores by default
+                    relevance_score=0.0
                 ))
 
         return answer, sources
@@ -238,28 +258,26 @@ class LLMService:
         Yields:
             Response chunks.
         """
-        if not self.conversation_chain:
-            raise ValueError("Conversation chain not initialized.")
+        if not self._llm or not self.vectorstore:
+            raise ValueError("Conversation not initialized. Call create_conversation_chain first.")
 
-        # For streaming, we need to use the LLM directly with context
+        # Retrieve relevant documents
         docs = self.vectorstore.similarity_search(question, k=4)
-        context = "\n\n".join([doc.page_content for doc in docs])
+        context = "\n\n---\n\n".join([doc.page_content for doc in docs])
 
-        prompt = f"""Based on the following context, answer the question.
-If you cannot answer based on the context, say so.
+        # Build messages
+        messages = self._build_context_prompt(question, context)
 
-Context:
-{context}
-
-Question: {question}
-
-Answer:"""
-
-        llm = self._create_chat_llm(streaming=True)
-
-        for chunk in llm.stream(prompt):
-            if hasattr(chunk, 'content'):
+        # Stream response
+        full_response = ""
+        for chunk in self._llm.stream(messages):
+            if hasattr(chunk, 'content') and chunk.content:
+                full_response += chunk.content
                 yield chunk.content
+
+        # Update chat history after streaming completes
+        self.chat_history.append(HumanMessage(content=question))
+        self.chat_history.append(AIMessage(content=full_response))
 
     def generate_summary(self, text: str, max_length: int = 300) -> str:
         """
@@ -359,6 +377,5 @@ Questions:"""
 
     def clear_memory(self) -> None:
         """Clear conversation memory."""
-        if self.memory:
-            self.memory.clear()
-            logger.info("Conversation memory cleared")
+        self.chat_history = []
+        logger.info("Conversation memory cleared")
