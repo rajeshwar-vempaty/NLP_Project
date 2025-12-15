@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
+from langchain_classic.memory import ConversationBufferMemory
+from langchain_classic.chains import ConversationalRetrievalChain
 
 from ..config.settings import get_settings
 from ..models.schemas import TextChunk, ChatMessage, MessageRole
@@ -109,7 +109,11 @@ class LLMService:
     def load_vectorstore(self, path: str, provider: str = "openai") -> FAISS:
         """Load vector store from disk."""
         embeddings = self.create_embeddings(provider)
-        self.vectorstore = FAISS.load_local(path, embeddings)
+        self.vectorstore = FAISS.load_local(
+            path,
+            embeddings,
+            allow_dangerous_deserialization=True
+        )
         logger.info(f"Vector store loaded from {path}")
         return self.vectorstore
 

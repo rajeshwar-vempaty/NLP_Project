@@ -53,6 +53,25 @@ class Styles:
     /* Global Styles */
     .stApp {{
         background-color: {colors['bg_primary']};
+        color: {colors['text_primary']};
+    }}
+
+    /* Ensure all text elements have proper color */
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {{
+        color: {colors['text_primary']} !important;
+    }}
+
+    .stApp p, .stApp li, .stApp span, .stApp div {{
+        color: {colors['text_primary']};
+    }}
+
+    .stMarkdown, .stMarkdown p, .stMarkdown li {{
+        color: {colors['text_primary']} !important;
+    }}
+
+    /* Secondary text styling */
+    .stApp .secondary-text {{
+        color: {colors['text_secondary']};
     }}
 
     /* Hide Streamlit branding */
