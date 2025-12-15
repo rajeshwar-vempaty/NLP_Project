@@ -52,8 +52,17 @@ class Styles:
 <style>
     /* Global Styles */
     .stApp {{
-        background-color: {colors['bg_primary']};
-        color: {colors['text_primary']};
+        background-color: {colors['bg_primary']} !important;
+        color: {colors['text_primary']} !important;
+    }}
+
+    /* Main content area */
+    .stApp [data-testid="stAppViewContainer"] {{
+        background-color: {colors['bg_primary']} !important;
+    }}
+
+    .stApp [data-testid="stMain"] {{
+        color: {colors['text_primary']} !important;
     }}
 
     /* Ensure all text elements have proper color */
@@ -61,17 +70,35 @@ class Styles:
         color: {colors['text_primary']} !important;
     }}
 
-    .stApp p, .stApp li, .stApp span, .stApp div {{
-        color: {colors['text_primary']};
+    .stApp p, .stApp li, .stApp span {{
+        color: {colors['text_primary']} !important;
     }}
 
-    .stMarkdown, .stMarkdown p, .stMarkdown li {{
+    .stMarkdown {{
+        color: {colors['text_primary']} !important;
+    }}
+
+    .stMarkdown p, .stMarkdown li, .stMarkdown span {{
+        color: {colors['text_primary']} !important;
+    }}
+
+    /* Streamlit text elements */
+    .stApp .stText, .stApp .stMarkdown {{
+        color: {colors['text_primary']} !important;
+    }}
+
+    /* Element container text */
+    .stApp [data-testid="stMarkdownContainer"] {{
+        color: {colors['text_primary']} !important;
+    }}
+
+    .stApp [data-testid="stMarkdownContainer"] p {{
         color: {colors['text_primary']} !important;
     }}
 
     /* Secondary text styling */
     .stApp .secondary-text {{
-        color: {colors['text_secondary']};
+        color: {colors['text_secondary']} !important;
     }}
 
     /* Hide Streamlit branding */

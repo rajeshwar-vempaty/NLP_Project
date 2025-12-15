@@ -81,13 +81,13 @@ class SidebarComponent:
             process_btn = st.button(
                 "🔄 Process",
                 disabled=not uploaded_files,
-                use_container_width=True
+                width="stretch"
             )
 
         with col2:
             clear_upload = st.button(
                 "🗑️ Clear",
-                use_container_width=True
+                width="stretch"
             )
 
         if process_btn and uploaded_files:
@@ -182,7 +182,7 @@ class SidebarComponent:
         col1, col2 = st.columns(2)
 
         with col1:
-            if st.button("🗑️ Clear Chat", use_container_width=True):
+            if st.button("🗑️ Clear Chat", width="stretch"):
                 if on_clear:
                     on_clear()
                 st.session_state.chat_history = []
@@ -190,7 +190,7 @@ class SidebarComponent:
                 st.rerun()
 
         with col2:
-            if st.button("📤 Export", use_container_width=True):
+            if st.button("📤 Export", width="stretch"):
                 st.session_state.show_export = True
 
     def _render_footer(self) -> None:

@@ -407,7 +407,7 @@ def main() -> None:
                 md_content,
                 "chat_export.md",
                 "text/markdown",
-                use_container_width=True
+                width="stretch"
             )
 
     # Main content
@@ -452,7 +452,7 @@ def main() -> None:
         # Show sample dashboard preview
         st.image(
             "https://via.placeholder.com/800x400?text=Upload+Documents+to+See+Dashboard",
-            use_container_width=True
+            width="stretch"
         )
 
 
